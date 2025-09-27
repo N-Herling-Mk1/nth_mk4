@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio Visualizer UI</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/carouselToggle.css" />
+  <!-- ✅ Social Media Preview Tags -->
+  <!-- Open Graph (used by Facebook, LinkedIn, Discord, etc.) -->
+  <meta property="og:title" content="Audio Visualizer UI" />
+  <meta property="og:description" content="Interactive audio visualizer and project showcase." />
+  <meta property="og:image" content="assets\images\NTH_3.png" />
+  <meta property="og:url" content="_stub_" />
+  <meta property="og:type" content="website" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Audio Visualizer UI" />
+  <meta name="twitter:description" content="Interactive audio visualizer and project showcase." />
+  <meta name="twitter:image" content="assets\images\NTH_3.png" />   
+</head>
+<body>
+  <div class="container">
+    <!-- Top Row: 3 columns -->
+    <div class="top-row">
+      <div class="top-left">Top Left</div>
+      <div class="top-middle">
+        <div class="canvas-wrapper">
+          <canvas id="ui-canvas"></canvas>
+          <canvas id="viz-canvas"></canvas>
+        </div>
+      </div>
+    <div class="top-right">
+      <h3>Degrees &amp; Minors</h3>
+      <ul>
+        <li>B.S. Biology, minor Chemistry.</li>
+        <li>B.S. Electrical and Computer Engineering, minor Math.
+          <ul> 
+          <li>Dual tracks: Engineering track, Computer Engineering track</li>
+          </ul>
+        <li>B.S. Physics, minor Computer Science</li>
+        <li>Master's Degree Data Science, May 2025 - present</li>
+        - GPA: 4.0
+      </ul>
+    </div>
+    </div>
+
+    <!-- Middle toggle widget placeholder -->
+    <div class="middle-toggle">
+      <button class="toggle-btn left electric-haze" aria-label="Previous Page">
+        <div class="lightning-branch"></div>
+      </button>
+
+      <div class="preview-container" tabindex="0" aria-live="polite" aria-atomic="true">
+        <img src="" alt="" />
+      </div>
+
+      <button class="toggle-btn right electric-haze" aria-label="Next Page">
+        <div class="lightning-branch"></div>
+      </button>
+    </div>
+
+    <!-- Bottom content area -->
+    <div class="bottom-content">
+      <!-- Dynamic content based on toggle -->
+    </div>
+  </div>
+
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>

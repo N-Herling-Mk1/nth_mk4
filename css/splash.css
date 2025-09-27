@@ -1,0 +1,168 @@
+/* Base layout */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: #111;
+  color: #eee;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+  user-select: none;
+  position: relative;
+}
+
+/* Main container for splash elements */
+.splash-container {
+  position: relative;
+  z-index: 100;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+  text-align: center;
+  gap: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 1s ease-in;
+}
+
+/* Header */
+header {
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+}
+
+/* Image wrapper */
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  z-index: 101;
+}
+
+/* The image itself */
+.image-wrapper img {
+  display: block;
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 16px;
+  box-shadow: 0 0 15px 5px rgba(0, 120, 255, 0.5);
+}
+
+/* Pulse SVG overlay */
+.pulse-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+  overflow: visible;
+}
+
+/* Enter button */
+#enter-button {
+  font-size: 2.5rem;
+  background-color: #0078ff;
+  border: none;
+  border-radius: 30px;
+  padding: 0.75rem 2rem;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  z-index: 101;
+  box-shadow: 0 0 15px #0078ff;
+}
+
+#enter-button:hover:not(:disabled) {
+  background-color: #005fcc;
+  transform: scale(1.05);
+  box-shadow: 0 0 25px 5px #0078ff;
+}
+
+#enter-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Fade out splash elements */
+.splash-container.fade-out {
+  animation: fadeOut 0.7s forwards;
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Optional entrance animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Static noise canvas (background) */
+canvas#static-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Audio overlay canvas (middle Gaussian cluster) */
+canvas#audio-overlay-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2; /* Between static and splash container */
+  pointer-events: none;
+}
+
+/* Optional fade overlay (for transitions) */
+#noise-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: black;
+  z-index: 1;
+  opacity: 1;
+  transition: opacity 1s ease-in-out;
+}
+
+#noise-overlay.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+.image-wrapper img {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px 5px rgba(0, 120, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px 10px rgba(0, 120, 255, 0.8);
+  }
+}

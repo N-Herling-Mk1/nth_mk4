@@ -1,0 +1,107 @@
+/* Base button styles (shared) */
+.middle-toggle .toggle-btn {
+  position: relative;
+  width: 220px;
+  height: 260px;
+  background-color: rgba(0, 255, 0, 0.2); /* light green fill */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  z-index: 1;
+}
+
+/* RIGHT-facing kite (your current shape) */
+.middle-toggle .toggle-btn.right {
+  clip-path: polygon(
+    100% 50%,   /* Front point */
+    50% 0%,     /* Top slant */
+    20% 25%,    /* Back top inward */
+    30% 50%,    /* Back center indent */
+    20% 75%,    /* Back bottom inward */
+    50% 100%    /* Bottom slant */
+  );
+}
+
+/* LEFT-facing kite (mirror image of the right) */
+.middle-toggle .toggle-btn.left {
+  clip-path: polygon(
+    0% 50%,     /* Front point (left side) */
+    50% 0%,     /* Top slant */
+    80% 25%,    /* Back top inward */
+    70% 50%,    /* Back center indent */
+    80% 75%,    /* Back bottom inward */
+    50% 100%    /* Bottom slant */
+  );
+}
+
+/* Hover: just increase opacity of the background */
+.middle-toggle .toggle-btn:hover {
+  background-color: rgba(0, 255, 0, 0.4); /* lighter (more opaque) green */
+}
+
+
+/* -------------------------------
+   Pulse Tip Animation (On Click)
+-------------------------------- */
+
+/* Base pulse style */
+.middle-toggle .toggle-btn::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: rgba(0, 255, 255, 0.6); /* electric blue base */
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(1);
+  filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.6));
+}
+
+/* Position pulse at tip — LEFT */
+.middle-toggle .toggle-btn.left::after {
+  top: 50%;
+  left: 0%;
+}
+
+/* Position pulse at tip — RIGHT */
+.middle-toggle .toggle-btn.right::after {
+  top: 50%;
+  left: 100%;
+}
+
+/* Animation Keyframes */
+@keyframes pulseTip {
+  0% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 0 14px 6px rgba(0, 255, 255, 0.7);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(6);
+    box-shadow: 0 0 30px 14px rgba(0, 255, 255, 0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(7);
+    box-shadow: none;
+  }
+}
+
+
+.middle-toggle .toggle-btn:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity var(--DEBOUNCE_DURATION_MS) ease;
+}
+
+.middle-toggle .toggle-btn:disabled.pulse::after {
+  animation: none !important;
+  opacity: 0 !important;
+}
+
+/* Active trigger class */
+.middle-toggle .toggle-btn.pulse::after {
+  animation: pulseTip 1.2s ease-out;
+}
+
