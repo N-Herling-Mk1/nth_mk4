@@ -3,109 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Welc  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Audio Visualizer UI</title>
-  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/splash.css" />
   <link rel="stylesheet" href="css/carouselToggle.css" />
-  <!-- ✅ Social Media Preview Tags -->
-  <!-- Open Graph (used by Facebook, LinkedIn, Discord, etc.) -->
+
+  <!-- Social Media Preview Tags -->
   <meta property="og:title" content="Audio Visualizer UI" />
   <meta property="og:description" content="Interactive audio visualizer and project showcase." />
-  <meta property="og:image" content="assets\images\NTH_3.png" />
+  <meta property="og:image" content="assets/images/NTH_3.png" />
   <meta property="og:url" content="_stub_" />
   <meta property="og:type" content="website" />
 
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Audio Visualizer UI" />
   <meta name="twitter:description" content="Interactive audio visualizer and project showcase." />
-  <meta name="twitter:image" content="assets\images\NTH_3.png" />   ome</title>
-  <style>
-    body {
-      background: black;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 2rem;
-      overflow: hidden;
-    }
-    .image-wrapper {
-      position: relative;
-      display: inline-block;
-      margin-bottom: 1.5rem;
-      width: 400px;
-      height: 300px;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 0 15px 5px rgba(0, 120, 255, 0.5);
-    }
-    .image-wrapper img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 16px;
-      display: block;
-      position: relative;
-      z-index: 1;
-      transition: opacity 1s ease;
-    }
-    #enter-button {
-      padding: 0.8rem 2rem;
-      font-size: 1.2rem;
-      border: none;
-      border-radius: 8px;
-      background: #0078ff;
-      color: white;
-      cursor: pointer;
-      box-shadow: 0 0 10px #0078ff;
-      transition: background 0.3s ease;
-    }
-    #enter-button:disabled {
-      background: #004fbb;
-      cursor: default;
-      box-shadow: none;
-    }
-    #enter-button:hover:not(:disabled) {
-      background: #005fcc;
-    }
-    /* Overlay container style for uiAnimation */
-    #ui-animation-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border-radius: 16px;
-      pointer-events: none;
-      z-index: 10;
-      background: transparent;
-      opacity: 1;
-      transition: opacity 1s ease;
-    }
-    /* Fullscreen black fade overlay */
-    #fade-to-black {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: black;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 1s ease;
-      z-index: 9999;
-    }
-  </style>
+  <meta name="twitter:image" content="assets/images/NTH_3.png" />
 </head>
 <body>
-  <h1>Welcome to Nathan Herling's personal website</h1>
+  <div class="container splash-container d-flex flex-column align-items-center justify-content-center min-vh-100 text-center px-3">
+    <h1 class="mb-4 fw-bold">Welcome to Nathan Herling's personal website</h1>
 
-  <div class="image-wrapper" id="image-wrapper">
-    <img src="assets/images/NTH_4.png" alt="Nathan Herling" id="main-image" />
-    <!-- uiAnimation overlay will be inserted here -->
-  </div>
+    <div class="image-wrapper mb-4 w-100" style="max-width: 400px; position: relative;">
+      <img
+        src="assets/images/NTH_4.png"
+        alt="Nathan Herling"
+        id="main-image"
+        class="img-fluid rounded shadow"
+        style="box-shadow: 0 0 15px 5px rgba(0, 120, 255, 0.5); transition: opacity 1s ease;"
+      />
+      <!-- uiAnimation overlay will be inserted here -->
+    </div>
 
-  <div>
-    <button id="enter-button">ENTER HERE</button>
+    <button id="enter-button" class="btn btn-primary btn-lg px-4 shadow">
+      ENTER HERE
+    </button>
   </div>
 
   <!-- Fullscreen black overlay for fade out -->
@@ -173,7 +109,7 @@
     }
 
     const button = document.getElementById('enter-button');
-    const imageWrapper = document.getElementById('image-wrapper');
+    const imageWrapper = document.querySelector('.image-wrapper');
     const mainImage = document.getElementById('main-image');
     const fadeToBlack = document.getElementById('fade-to-black');
 
@@ -183,7 +119,7 @@
       // Fade out main image
       mainImage.style.opacity = '0';
 
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1000));
 
       // Create and append overlay animation
       const overlay = createUIAnimation();
@@ -217,7 +153,7 @@
           fadeToBlack.style.opacity = '1';
 
           // Wait for fade duration
-          await new Promise(r => setTimeout(r, 1000));
+          await new Promise((r) => setTimeout(r, 1000));
 
           overlay.cleanup();
 
