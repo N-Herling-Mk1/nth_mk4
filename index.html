@@ -1,3 +1,4 @@
+<!--File: index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,6 +24,20 @@
   <meta name="twitter:title" content="Audio Visualizer UI" />
   <meta name="twitter:description" content="Interactive audio visualizer and project showcase." />
   <meta name="twitter:image" content="assets/images/NTH_3.png" />
+
+  <style>
+    /* Basic fade-to-black overlay */
+    #fade-to-black {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background-color: black;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease;
+      z-index: 1000;
+    }
+  </style>
 </head>
 <body>
   <div class="container splash-container d-flex flex-column align-items-center justify-content-center min-vh-100 text-center px-3">
@@ -36,7 +51,12 @@
         class="img-fluid rounded shadow"
         style="box-shadow: 0 0 15px 5px rgba(0, 120, 255, 0.5); transition: opacity 1s ease;"
       />
-      <!-- uiAnimation overlay will be inserted here -->
+
+      <!-- Canvas wrapper: layered ui-canvas + viz-canvas as in main.html -->
+      <div class="canvas-wrapper position-absolute top-0 start-0 w-100 h-100" style="pointer-events: none; opacity: 0; transition: opacity 1s ease; z-index: 5;" id="canvas-wrapper">
+        <canvas id="ui-canvas" class="position-absolute top-0 start-0 w-100 h-100"></canvas>
+        <canvas id="viz-canvas" class="position-absolute top-0 start-0 w-100 h-100"></canvas>
+      </div>
     </div>
 
     <button id="enter-button" class="btn btn-primary btn-lg px-4 shadow">
@@ -47,88 +67,42 @@
   <!-- Fullscreen black overlay for fade out -->
   <div id="fade-to-black"></div>
 
-  <script>
-    // --- Mock minimal uiAnimation.js inline ---
-    function createUIAnimation() {
-      const container = document.createElement('div');
-      container.id = 'ui-animation-overlay';
-
-      const canvas = document.createElement('canvas');
-      canvas.width = 400;
-      canvas.height = 300;
-      canvas.style.width = '100%';
-      canvas.style.height = '100%';
-      container.appendChild(canvas);
-
-      const ctx = canvas.getContext('2d');
-      let analyser;
-      let dataArray;
-      let animationFrameId;
-
-      function draw() {
-        animationFrameId = requestAnimationFrame(draw);
-
-        if (!analyser) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          return;
-        }
-
-        analyser.getByteFrequencyData(dataArray);
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const barWidth = (canvas.width / dataArray.length) * 2.5;
-        let barHeight;
-        let x = 0;
-
-        for (let i = 0; i < dataArray.length; i++) {
-          barHeight = dataArray[i] / 2;
-          ctx.fillStyle = `rgba(0, 120, 255, ${dataArray[i] / 255})`;
-          ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-          x += barWidth + 1;
-        }
-      }
-
-      container.setAudioSource = function(source, audioCtx) {
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        const bufferLength = analyser.frequencyBinCount;
-        dataArray = new Uint8Array(bufferLength);
-
-        source.connect(analyser);
-        analyser.connect(audioCtx.destination);
-
-        draw();
-      };
-
-      container.cleanup = function() {
-        cancelAnimationFrame(animationFrameId);
-      };
-
-      return container;
-    }
+  <!-- Import uiAnimator.js and script logic -->
+  <script type="module">
+    import { startUIAnimation } from './js/uiAnimator.js';
 
     const button = document.getElementById('enter-button');
-    const imageWrapper = document.querySelector('.image-wrapper');
     const mainImage = document.getElementById('main-image');
     const fadeToBlack = document.getElementById('fade-to-black');
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+    const uiCanvas = document.getElementById('ui-canvas');
+    const vizCanvas = document.getElementById('viz-canvas');
+    const vizCtx = vizCanvas.getContext('2d');
+
+    let audioCtx;
+    let analyser;
+    let dataArray;
+    let animationId;
+    let source;
 
     button.addEventListener('click', async () => {
-      button.disabled = true;
+    button.disabled = true;
 
-      // Fade out main image
-      mainImage.style.opacity = '0';
+    // Fade out main image
+    mainImage.style.opacity = '0';
 
-      await new Promise((r) => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 1000));
 
-      // Create and append overlay animation
-      const overlay = createUIAnimation();
-      imageWrapper.appendChild(overlay);
+    // Show canvas wrapper
+    canvasWrapper.style.opacity = '1';
 
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Start wave animation on ui-canvas
+    startUIAnimation();
+
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') {
-          await audioCtx.resume();
+        await audioCtx.resume();
         }
 
         // Fetch audio
@@ -136,38 +110,68 @@
         if (!response.ok) throw new Error('Audio fetch failed');
         const arrayBuffer = await response.arrayBuffer();
         const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-        const source = audioCtx.createBufferSource();
+
+        // Create source and analyser
+        source = audioCtx.createBufferSource();
         source.buffer = audioBuffer;
 
-        // Connect audio source to visualization
-        overlay.setAudioSource(source, audioCtx);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        const bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+
+        // Connect nodes
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
 
         source.start();
 
+        // Visualization loop on viz-canvas
+        function drawViz() {
+        animationId = requestAnimationFrame(drawViz);
+
+        vizCtx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+
+        const barWidth = (vizCanvas.width / bufferLength) * 2.5;
+        let x = 0;
+
+        analyser.getByteFrequencyData(dataArray);
+
+        for (let i = 0; i < bufferLength; i++) {
+            const barHeight = dataArray[i] / 2;
+            const alpha = dataArray[i] / 255;
+
+            vizCtx.fillStyle = `rgba(0, 120, 255, ${alpha})`;
+            vizCtx.fillRect(x, vizCanvas.height - barHeight, barWidth, barHeight);
+
+            x += barWidth + 1;
+        }
+        }
+
+        drawViz();
+
         source.onended = async () => {
-          // Fade out overlay animation
-          overlay.style.opacity = '0';
+        cancelAnimationFrame(animationId);
 
-          // Fade to black overlay
-          fadeToBlack.style.pointerEvents = 'auto';
-          fadeToBlack.style.opacity = '1';
+        // Fade out viz and ui canvas wrapper
+        canvasWrapper.style.opacity = '0';
 
-          // Wait for fade duration
-          await new Promise((r) => setTimeout(r, 1000));
+        // Fade to black overlay
+        fadeToBlack.style.pointerEvents = 'auto';
+        fadeToBlack.style.opacity = '1';
 
-          overlay.cleanup();
+        await new Promise(r => setTimeout(r, 1000));
 
-          // Navigate
-          window.location.href = 'main.html';
+        // Navigate
+        window.location.href = 'main.html';
         };
-      } catch (e) {
+    } catch (e) {
         console.error('Audio playback failed', e);
         alert('Failed to play audio.');
         button.disabled = false;
         mainImage.style.opacity = '1';
-        if (overlay && overlay.cleanup) overlay.cleanup();
-        overlay.remove();
-      }
+        canvasWrapper.style.opacity = '0';
+    }
     });
   </script>
 </body>
