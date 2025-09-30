@@ -84,32 +84,56 @@
     let dataArray;
     let animationId;
     let source;
+    let audioBuffer;
 
-    button.addEventListener('click', async () => {
-    button.disabled = true;
-
-    // Fade out main image
-    mainImage.style.opacity = '0';
-
-    await new Promise(r => setTimeout(r, 1000));
-
-    // Show canvas wrapper
-    canvasWrapper.style.opacity = '1';
-
-    // Start wave animation on ui-canvas
-    startUIAnimation();
-
-    try {
+    // Preload audio on page load
+    async function preloadAudio() {
+      try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') {
-        await audioCtx.resume();
+          await audioCtx.resume();
         }
-
-        // Fetch audio
         const response = await fetch('assets/audio/01_Welcome.wav');
         if (!response.ok) throw new Error('Audio fetch failed');
         const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      } catch (e) {
+        console.error('Audio preload failed', e);
+      }
+    }
+
+    // Call preload immediately
+    preloadAudio();
+
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+
+      // Fade out main image
+      mainImage.style.opacity = '0';
+
+      await new Promise(r => setTimeout(r, 1000));
+
+      // Show canvas wrapper
+      canvasWrapper.style.opacity = '1';
+
+      // Start wave animation on ui-canvas
+      startUIAnimation();
+
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+          }
+        }
+
+        if (!audioBuffer) {
+          alert('Audio not loaded yet. Please try again shortly.');
+          button.disabled = false;
+          mainImage.style.opacity = '1';
+          canvasWrapper.style.opacity = '0';
+          return;
+        }
 
         // Create source and analyser
         source = audioCtx.createBufferSource();
@@ -128,16 +152,16 @@
 
         // Visualization loop on viz-canvas
         function drawViz() {
-        animationId = requestAnimationFrame(drawViz);
+          animationId = requestAnimationFrame(drawViz);
 
-        vizCtx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+          vizCtx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
 
-        const barWidth = (vizCanvas.width / bufferLength) * 2.5;
-        let x = 0;
+          const barWidth = (vizCanvas.width / bufferLength) * 2.5;
+          let x = 0;
 
-        analyser.getByteFrequencyData(dataArray);
+          analyser.getByteFrequencyData(dataArray);
 
-        for (let i = 0; i < bufferLength; i++) {
+          for (let i = 0; i < bufferLength; i++) {
             const barHeight = dataArray[i] / 2;
             const alpha = dataArray[i] / 255;
 
@@ -145,33 +169,33 @@
             vizCtx.fillRect(x, vizCanvas.height - barHeight, barWidth, barHeight);
 
             x += barWidth + 1;
-        }
+          }
         }
 
         drawViz();
 
         source.onended = async () => {
-        cancelAnimationFrame(animationId);
+          cancelAnimationFrame(animationId);
 
-        // Fade out viz and ui canvas wrapper
-        canvasWrapper.style.opacity = '0';
+          // Fade out viz and ui canvas wrapper
+          canvasWrapper.style.opacity = '0';
 
-        // Fade to black overlay
-        fadeToBlack.style.pointerEvents = 'auto';
-        fadeToBlack.style.opacity = '1';
+          // Fade to black overlay
+          fadeToBlack.style.pointerEvents = 'auto';
+          fadeToBlack.style.opacity = '1';
 
-        await new Promise(r => setTimeout(r, 1000));
+          await new Promise(r => setTimeout(r, 1000));
 
-        // Navigate
-        window.location.href = 'main.html';
+          // Navigate
+          window.location.href = 'main.html';
         };
-    } catch (e) {
+      } catch (e) {
         console.error('Audio playback failed', e);
         alert('Failed to play audio.');
         button.disabled = false;
         mainImage.style.opacity = '1';
         canvasWrapper.style.opacity = '0';
-    }
+      }
     });
   </script>
 </body>
