@@ -84,21 +84,24 @@
     let dataArray;
     let animationId;
     let source;
-    let audioBuffer;
+    let audioBuffer;  // Store decoded audio buffer for playback
 
-    // Preload audio on page load
+    // Preload and decode audio on page load
     async function preloadAudio() {
       try {
+        console.log('[Audio] Starting preload of audio file...');
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') {
-          await audioCtx.resume();
-        }
+
         const response = await fetch('assets/audio/01_Welcome.wav');
-        if (!response.ok) throw new Error('Audio fetch failed');
+        if (!response.ok) throw new Error('Audio fetch failed with status ' + response.status);
         const arrayBuffer = await response.arrayBuffer();
         audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-      } catch (e) {
-        console.error('Audio preload failed', e);
+
+        console.log('[Audio] Audio file loaded and decoded successfully.');
+      } catch (err) {
+        console.error('[Audio] Preload failed:', err);
+        alert('Failed to preload audio. Please refresh the page.');
+        button.disabled = true;
       }
     }
 
@@ -108,37 +111,32 @@
     button.addEventListener('click', async () => {
       button.disabled = true;
 
-      // Fade out main image
-      mainImage.style.opacity = '0';
-
-      await new Promise(r => setTimeout(r, 1000));
-
-      // Show canvas wrapper
-      canvasWrapper.style.opacity = '1';
-
-      // Start wave animation on ui-canvas
-      startUIAnimation();
-
       try {
-        if (!audioCtx) {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-          }
+        // Resume AudioContext if suspended (required on some mobile browsers)
+        if (audioCtx.state === 'suspended') {
+          console.log('[Audio] Resuming AudioContext...');
+          await audioCtx.resume();
+          console.log('[Audio] AudioContext resumed.');
         }
 
-        if (!audioBuffer) {
-          alert('Audio not loaded yet. Please try again shortly.');
-          button.disabled = false;
-          mainImage.style.opacity = '1';
-          canvasWrapper.style.opacity = '0';
-          return;
-        }
+        // Fade out main image
+        console.log('[UI] Fading out main image...');
+        mainImage.style.opacity = '0';
 
-        // Create source and analyser
+        await new Promise(r => setTimeout(r, 1000));
+
+        // Show canvas wrapper (visualizations)
+        console.log('[UI] Showing canvas wrapper for visualizations...');
+        canvasWrapper.style.opacity = '1';
+
+        // Start UI animation (ellipses + noise)
+        startUIAnimation();
+
+        // Create buffer source for playback
         source = audioCtx.createBufferSource();
         source.buffer = audioBuffer;
 
+        // Setup analyser node
         analyser = audioCtx.createAnalyser();
         analyser.fftSize = 256;
         const bufferLength = analyser.frequencyBinCount;
@@ -148,6 +146,7 @@
         source.connect(analyser);
         analyser.connect(audioCtx.destination);
 
+        console.log('[Audio] Starting playback...');
         source.start();
 
         // Visualization loop on viz-canvas
@@ -175,28 +174,34 @@
         drawViz();
 
         source.onended = async () => {
+          console.log('[Audio] Playback ended.');
+
           cancelAnimationFrame(animationId);
 
           // Fade out viz and ui canvas wrapper
+          console.log('[UI] Fading out visualization canvases...');
           canvasWrapper.style.opacity = '0';
 
           // Fade to black overlay
           fadeToBlack.style.pointerEvents = 'auto';
           fadeToBlack.style.opacity = '1';
 
-          await new Promise(r => setTimeout(r, 1000));
+          // Extra delay to ensure fade completes before navigation
+          await new Promise(r => setTimeout(r, 1500));
 
-          // Navigate
+          console.log('[Navigation] Navigating to main.html');
           window.location.href = 'main.html';
         };
+
       } catch (e) {
-        console.error('Audio playback failed', e);
+        console.error('[Audio] Playback failed:', e);
         alert('Failed to play audio.');
         button.disabled = false;
         mainImage.style.opacity = '1';
         canvasWrapper.style.opacity = '0';
       }
     });
+
   </script>
 </body>
 </html>
