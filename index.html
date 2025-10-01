@@ -26,7 +26,6 @@
   <meta name="twitter:image" content="assets/images/NTH_3.png" />
 
   <style>
-    /* Basic fade-to-black overlay */
     #fade-to-black {
       position: fixed;
       top: 0; left: 0;
@@ -52,7 +51,6 @@
         style="box-shadow: 0 0 15px 5px rgba(0, 120, 255, 0.5); transition: opacity 1s ease;"
       />
 
-      <!-- Canvas wrapper: layered ui-canvas + viz-canvas as in main.html -->
       <div class="canvas-wrapper position-absolute top-0 start-0 w-100 h-100" style="pointer-events: none; opacity: 0; transition: opacity 1s ease; z-index: 5;" id="canvas-wrapper">
         <canvas id="ui-canvas" class="position-absolute top-0 start-0 w-100 h-100"></canvas>
         <canvas id="viz-canvas" class="position-absolute top-0 start-0 w-100 h-100"></canvas>
@@ -64,10 +62,13 @@
     </button>
   </div>
 
-  <!-- Fullscreen black overlay for fade out -->
   <div id="fade-to-black"></div>
 
-  <!-- Import uiAnimator.js and script logic -->
+  <!-- Optional fallback audio element -->
+  <audio id="audio-fallback" preload="auto" playsinline style="display:none;">
+    <source src="assets/audio/01_Welcome.mp3" type="audio/mp3" />
+  </audio>
+
   <script type="module">
     import { startUIAnimation } from './js/uiAnimator.js';
 
@@ -83,90 +84,48 @@
     let analyser;
     let dataArray;
     let animationId;
-    let source;
-    let audioBuffer;  // Store decoded audio buffer for playback
-
-    // Preload and decode audio on page load
-    async function preloadAudio() {
-      try {
-        console.log('[Audio] Starting preload of audio file...');
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-        const response = await fetch('assets/audio/01_Welcome.wav');
-        if (!response.ok) throw new Error('Audio fetch failed with status ' + response.status);
-        const arrayBuffer = await response.arrayBuffer();
-        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
-        console.log('[Audio] Audio file loaded and decoded successfully.');
-      } catch (err) {
-        console.error('[Audio] Preload failed:', err);
-        alert('Failed to preload audio. Please refresh the page.');
-        button.disabled = true;
-      }
-    }
-
-    // Call preload immediately
-    preloadAudio();
 
     button.addEventListener('click', async () => {
       button.disabled = true;
 
       try {
-        // Resume AudioContext if suspended (required on some mobile browsers)
-        if (audioCtx.state === 'suspended') {
-          console.log('[Audio] Resuming AudioContext...');
-          await audioCtx.resume();
-          console.log('[Audio] AudioContext resumed.');
-        }
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-        // Fade out main image
-        console.log('[UI] Fading out main image...');
-        mainImage.style.opacity = '0';
+        const response = await fetch('assets/audio/01_Welcome.mp3');
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
-        await new Promise(r => setTimeout(r, 1000));
-
-        // Show canvas wrapper (visualizations)
-        console.log('[UI] Showing canvas wrapper for visualizations...');
-        canvasWrapper.style.opacity = '1';
-
-        // Start UI animation (ellipses + noise)
-        startUIAnimation();
-
-        // Create buffer source for playback
-        source = audioCtx.createBufferSource();
+        const source = audioCtx.createBufferSource();
         source.buffer = audioBuffer;
 
-        // Setup analyser node
         analyser = audioCtx.createAnalyser();
         analyser.fftSize = 256;
         const bufferLength = analyser.frequencyBinCount;
         dataArray = new Uint8Array(bufferLength);
 
-        // Connect nodes
         source.connect(analyser);
         analyser.connect(audioCtx.destination);
-
-        console.log('[Audio] Starting playback...');
         source.start();
 
-        // Visualization loop on viz-canvas
+        mainImage.style.opacity = '0';
+        await new Promise(r => setTimeout(r, 1000));
+        canvasWrapper.style.opacity = '1';
+        startUIAnimation();
+
         function drawViz() {
           animationId = requestAnimationFrame(drawViz);
-
           vizCtx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
 
           const barWidth = (vizCanvas.width / bufferLength) * 2.5;
           let x = 0;
-
           analyser.getByteFrequencyData(dataArray);
 
           for (let i = 0; i < bufferLength; i++) {
             const barHeight = dataArray[i] / 2;
             const alpha = dataArray[i] / 255;
-
             vizCtx.fillStyle = `rgba(0, 120, 255, ${alpha})`;
             vizCtx.fillRect(x, vizCanvas.height - barHeight, barWidth, barHeight);
-
             x += barWidth + 1;
           }
         }
@@ -174,22 +133,11 @@
         drawViz();
 
         source.onended = async () => {
-          console.log('[Audio] Playback ended.');
-
           cancelAnimationFrame(animationId);
-
-          // Fade out viz and ui canvas wrapper
-          console.log('[UI] Fading out visualization canvases...');
           canvasWrapper.style.opacity = '0';
-
-          // Fade to black overlay
           fadeToBlack.style.pointerEvents = 'auto';
           fadeToBlack.style.opacity = '1';
-
-          // Extra delay to ensure fade completes before navigation
           await new Promise(r => setTimeout(r, 1500));
-
-          console.log('[Navigation] Navigating to main.html');
           window.location.href = 'main.html';
         };
 
@@ -201,7 +149,6 @@
         canvasWrapper.style.opacity = '0';
       }
     });
-
   </script>
 </body>
 </html>
