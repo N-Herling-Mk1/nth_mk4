@@ -12,8 +12,8 @@
   align-items: center;
 
   /* New sizing & shape */
-  width: 160px;
-  height: 80px;
+  width: 300px;
+  height: 120px;
   border-radius: 8px;
 
   /* New colors */
@@ -45,10 +45,10 @@
 .toggle-btn.right::before {
   content: '';
   display: inline-block;
-  width: 20px;
-  height: 20px;
-  border-top: 2px solid white;
-  border-left: 2px solid white;
+  width: 50px;
+  height: 50px;
+  border-top: 10px solid white;
+  border-left: 10px solid white;
   transform: rotate(-45deg);
   margin: 0;
 }
