@@ -1,3 +1,5 @@
+//File: carouselToggle.js
+
 import { DEBOUNCE_DURATION_MS } from './configure.js';
 import { initAudioController, resumeAudioContext, loadAndPlay } from './audioController.js';
 // From visualizer.js:
