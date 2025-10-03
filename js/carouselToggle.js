@@ -1,5 +1,3 @@
-// File: carouselToggle.js
-
 import { DEBOUNCE_DURATION_MS } from './configure.js';
 import { initAudioController, resumeAudioContext, loadAndPlay } from './audioController.js';
 // From visualizer.js:
@@ -75,70 +73,58 @@ export function initCarouselToggle() {
   // Initialize AudioContext and analyser
   ({ audioContext, analyser } = initAudioController());
 
-  // Function to update image, content, and play audio for current page
-async function updatePreview() {
-  if (!previewImg) {
-    console.error('Preview image element not found');
-    return;
+  // Update image, content, and play audio for current page
+  async function updatePreview() {
+    previewImg.style.opacity = 0;
+    bottomContent.classList.add('fade-out');
+
+    setTimeout(async () => {
+      const page = pages[currentIndex];
+      previewImg.src = page.img;
+      previewImg.alt = page.alt;
+      previewImg.style.opacity = 1;
+
+      if (page.contentUrl) {
+        try {
+          const response = await fetch(page.contentUrl);
+          if (!response.ok) throw new Error('Network response was not ok');
+          const htmlContent = await response.text();
+          bottomContent.innerHTML = htmlContent;
+        } catch (error) {
+          bottomContent.innerHTML = `<p>Error loading content.</p>`;
+          console.error('Error loading content:', error);
+        }
+      } else {
+        bottomContent.innerHTML = '';
+      }
+
+      bottomContent.classList.remove('fade-out');
+
+      try {
+        await resumeAudioContext(audioContext);
+
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio.src = '';
+          currentAudio = null;
+        }
+
+        currentAudio = await loadAndPlay(page.audioUrl, audioContext);
+
+        setAnalyserNode(analyser);
+        startVisualizer();
+
+        startUIAnimation();
+
+      } catch (err) {
+        console.warn('Audio playback prevented or failed:', err);
+        stopVisualizer();
+      }
+    }, 300);
   }
 
-  previewImg.style.opacity = 0;
-  bottomContent.classList.add('fade-out');
-
-  setTimeout(async () => {
-    previewImg.src = pages[currentIndex].img;
-    previewImg.alt = pages[currentIndex].alt;
-    previewImg.style.opacity = 1;
-
-    if (pages[currentIndex].contentUrl) {
-      try {
-        const response = await fetch(pages[currentIndex].contentUrl);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const htmlContent = await response.text();
-        bottomContent.innerHTML = htmlContent;
-      } catch (error) {
-        bottomContent.innerHTML = `<p>Error loading content.</p>`;
-        console.error('Error loading content:', error);
-      }
-    } else {
-      bottomContent.innerHTML = '';
-    }
-
-    bottomContent.classList.remove('fade-out');
-
-    try {
-      await resumeAudioContext(audioContext);
-
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.src = '';
-        currentAudio = null;
-      }
-
-      currentAudio = await loadAndPlay(pages[currentIndex].audioUrl, audioContext);
-
-      // Setup visualizer with the analyser
-      setAnalyserNode(analyser);
-      startVisualizer();
-
-      // Start any UI animations you have
-      startUIAnimation();
-
-    } catch (err) {
-      console.warn('Audio playback prevented or failed:', err);
-      // Optionally stop visualizer if audio can't play
-      stopVisualizer();
-    }
-  }, 300);
-}
-
-  // Navigation button handler with debounce
+  // Debounced navigation handler
   function handleNavigation(direction) {
-    const btn = direction === 'left' ? leftBtn : rightBtn;
-    btn.classList.remove('pulse');
-    void btn.offsetWidth; // Force reflow for animation restart
-    btn.classList.add('pulse');
-
     if (isDebounced) return;
     isDebounced = true;
 
@@ -153,10 +139,26 @@ async function updatePreview() {
     }, DEBOUNCE_DURATION_MS);
   }
 
-  // On first user interaction, resume AudioContext (needed for autoplay)
+  // Ripple effect trigger using CSS animation, positioned at click location
+  function triggerRippleEffect(button, event) {
+    // Calculate click position relative to button
+    const rect = button.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Set CSS variables to position ripple at click point
+    button.style.setProperty('--ripple-left', `${x}px`);
+    button.style.setProperty('--ripple-top', `${y}px`);
+
+    // Restart animation by removing and re-adding class
+    button.classList.remove('ripple-active');
+    void button.offsetWidth; // trigger reflow
+    button.classList.add('ripple-active');
+  }
+
+  // Resume AudioContext on first user interaction
   function userGestureHandler() {
     resumeAudioContext(audioContext).catch(() => {});
-    // Remove after first gesture
     leftBtn.removeEventListener('click', userGestureHandler);
     rightBtn.removeEventListener('click', userGestureHandler);
   }
@@ -164,9 +166,16 @@ async function updatePreview() {
   leftBtn.addEventListener('click', userGestureHandler, { once: true });
   rightBtn.addEventListener('click', userGestureHandler, { once: true });
 
-  leftBtn.addEventListener('click', () => handleNavigation('left'));
-  rightBtn.addEventListener('click', () => handleNavigation('right'));
+  leftBtn.addEventListener('click', (e) => {
+    triggerRippleEffect(leftBtn, e);
+    handleNavigation('left');
+  });
 
-  // Initial load (audio won't play until user interacts)
+  rightBtn.addEventListener('click', (e) => {
+    triggerRippleEffect(rightBtn, e);
+    handleNavigation('right');
+  });
+
+  // Initial content load (audio will wait for user interaction)
   updatePreview();
 }

@@ -1,4 +1,4 @@
-/* File: courouselToggle.css */
+/* File: carouselToggle.css */
 
 /* ----------------------------------------
   Carousel Toggle: Custom Visual Styles
@@ -10,22 +10,34 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background-color: #007acc;
-  color: #fff;
-  font-size: 1.5rem;
+
+  /* New sizing & shape */
+  width: 160px;
+  height: 80px;
+  border-radius: 8px;
+
+  /* New colors */
+  background-color: #228B22; /* forest green */
+  color: white;
+
+  /* Font & cursor */
+  font-size: 1.2rem;
   cursor: pointer;
+
+  /* Spacing & alignment */
+  padding: 0 15px;
+
+  /* Effects & transitions */
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 0 12px 4px rgba(0, 122, 255, 0.5);
-  z-index: 1;
+  box-shadow: none;
+
   overflow: hidden;
+  z-index: 1;
 }
 
 .toggle-btn:hover {
-  background-color: #005fa3;
-  box-shadow: 0 0 24px 6px rgba(0, 122, 255, 0.8);
+  background-color: #32CD32; /* lime green */
+  box-shadow: none;
 }
 
 /* Optional directional arrows */
@@ -33,8 +45,8 @@
 .toggle-btn.right::before {
   content: '';
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 20px;
+  height: 20px;
   border-top: 2px solid white;
   border-left: 2px solid white;
   transform: rotate(-45deg);
@@ -45,31 +57,48 @@
   transform: rotate(135deg);
 }
 
-/* Glow + animation effect */
-.electric-haze {
-  background: linear-gradient(145deg, #0066cc, #00aaff);
-}
-
-.lightning-branch {
+/* Ripple circle */
+.toggle-btn::after {
+  content: '';
   position: absolute;
-  width: 60%;
-  height: 2px;
-  background: linear-gradient(90deg, #fff, #0af);
-  top: 50%;
-  left: 20%;
-  opacity: 0.6;
-  animation: lightningFlash 1.5s infinite ease-in-out;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  background: rgba(50, 205, 50, 0.6);
+  top: var(--ripple-top, 50%);
+  left: var(--ripple-left, 50%);
   pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
 }
 
-@keyframes lightningFlash {
-  0%, 100% {
-    opacity: 0.2;
-    transform: scaleX(1);
+/* Ripple animation keyframes */
+@keyframes ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.6;
   }
-  50% {
-    opacity: 1;
-    transform: scaleX(1.5);
+  100% {
+    transform: translate(-50%, -50%) scale(15);
+    opacity: 0;
   }
 }
 
+/* When active, ripple plays animation */
+.toggle-btn.ripple-active::after {
+  animation: ripple 0.6s ease-out;
+}
+
+/* ----------------------------------------
+  Responsive Tweaks (Minimal due to Bootstrap)
+---------------------------------------- */
+@media (max-width: 768px) {
+  .middle-toggle .preview-container img {
+    max-height: 250px;
+  }
+
+  .carousel-buttons .toggle-btn {
+    width: 80px;
+    height: 40px; /* optional smaller height for small screens */
+  }
+}

@@ -69,19 +69,23 @@
     </div>
 
     <!-- Middle Toggle -->
-    <div class="middle-toggle d-flex justify-content-center align-items-center gap-3 my-4 flex-wrap">
+    <div class="middle-toggle d-flex flex-column justify-content-center align-items-center gap-3 my-4">
+
+    <!-- Buttons side by side -->
+    <div class="carousel-buttons d-flex justify-content-center gap-3 w-100" style="max-width: 400px;">
       <button class="toggle-btn left electric-haze" aria-label="Previous Page">
         <div class="lightning-branch"></div>
       </button>
-
+      <button class="toggle-btn right electric-haze" aria-label="Next Page">
+        <div class="lightning-branch"></div>
+      </button>
+    </div>
       <div class="preview-container flex-grow-1 d-flex justify-content-center align-items-center overflow-hidden rounded bg-secondary bg-opacity-25"
            tabindex="0" aria-live="polite" aria-atomic="true" style="max-width: 400px;">
         <img src="" alt="" class="img-fluid rounded" />
       </div>
 
-      <button class="toggle-btn right electric-haze" aria-label="Next Page">
-        <div class="lightning-branch"></div>
-      </button>
+
     </div>
 
     <!-- Bottom Content -->
