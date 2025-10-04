@@ -37,16 +37,76 @@ h1 {
   max-width: 400px;
   width: 100%;
   margin-bottom: 0.5rem;
+  overflow: visible; /* allow overflow for pulse */
+}
+
+/* BEHIND-IMAGE BLUE PULSE GLOW */
+.blue-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 250px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(0,255,255,0.4) 20%, rgba(0,200,255,0.15) 80%);
+  box-shadow:
+    0 0 50px 20px rgba(0, 255, 255, 0.7),
+    0 0 100px 40px rgba(0, 200, 255, 0.5),
+    0 0 140px 70px rgba(0, 200, 255, 0.3);
+  filter: blur(15px);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 0; /* Behind image */
+  transition: opacity 0.3s ease;
+}
+
+.image-wrapper:hover .blue-pulse {
+  opacity: 1;
+  animation: pulse-behind 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse-behind {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.35);
+    opacity: 1;
+  }
 }
 
 
+/* Image style */
+.image-wrapper img {
+  border-radius: 16px;
+  box-shadow: 0 0 15px 5px rgba(0, 120, 255, 0.5);
+  transition: opacity 1s ease;
+  width: 100%;
+  height: auto;
+  display: block;
+  animation: pulseGlow 2.5s infinite ease-in-out;
+  cursor: pointer;
+}
 
+/* Pulse glow animation */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px 5px rgba(0, 120, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px 10px rgba(0, 120, 255, 0.8);
+  }
+}
 
 /* Button styles */
 #enter-button {
-  padding: 0.8rem 2rem;
-  font-size: 1.25rem;
-  border-radius: 8px;
+  padding: 1.2rem 3rem;      /* Bigger padding */
+  font-size: 1.75rem;        /* Larger font size */
+  border-radius: 10px;       /* Slightly bigger rounded corners */
+  font-weight: 700;          /* Make the font a bit bolder */
+  letter-spacing: 0.07em;    /* Slightly wider letter spacing */
   box-shadow: 0 0 10px #0078ff;
   transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
   font-weight: 600;
