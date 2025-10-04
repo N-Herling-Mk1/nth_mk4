@@ -1,3 +1,4 @@
+<!-- File: index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,6 +36,30 @@
       transition: opacity 1s ease;
       z-index: 1000;
     }
+
+    #main-image {
+      cursor: pointer;
+      position: relative;
+      z-index: 10;
+      transition: filter 0.5s ease;
+    }
+
+    #canvas-wrapper {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      z-index: 15;
+    }
+
+    #viz-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+    }
   </style>
 </head>
 <body>
@@ -43,27 +68,25 @@
     <span>[Press image to enter]</span>
 
     <div class="image-wrapper mb-4 w-100" style="max-width: 400px; position: relative;">
-      <!-- Blue pulse div for hover effect -->
-<div class="blue-pulse"></div>
-<div class="image-wrapper mb-4 w-100" style="max-width: 400px; position: relative;">
-  <div class="blue-pulse"></div> <!-- Now sits behind image -->
+      <!-- Pulse Overlay -->
+      <div id="pulse-overlay" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events: none; z-index: 5;"></div>
 
-  <img
-    src="assets/images/NTH_6.png"
-    alt="Nathan Herling"
-    id="main-image"
-    class="img-fluid rounded shadow"
-    style="position: relative; z-index: 1;"
-  />
+      <!-- Clickable Image -->
+      <img
+        src="assets/images/NTH_6.png"
+        alt="Nathan Herling"
+        id="main-image"
+        class="img-fluid rounded shadow"
+      />
 
-  <div class="canvas-wrapper position-absolute top-0 start-0 w-100 h-100" style="pointer-events: none; opacity: 0; transition: opacity 1s ease; z-index: 5;" id="canvas-wrapper">
-    <canvas id="ui-canvas" class="position-absolute top-0 start-0 w-100 h-100"></canvas>
-    <canvas id="viz-canvas" class="position-absolute top-0 start-0 w-100 h-100"></canvas>
-  </div>
-</div>
+      <!-- Canvas Wrapper -->
+      <div id="canvas-wrapper">
+        <canvas id="viz-canvas"></canvas>
+      </div>
+    </div>
 
-
-    <button id="enter-button" class="btn btn-primary btn-lg px-4 shadow" style="display:none;">
+    <!-- Hidden Button (Optional Fallback) -->
+    <button id="enter-button" class="btn btn-primary btn-lg px-4 shadow" style="display: none;">
       ENTER HERE
     </button>
   </div>
@@ -76,27 +99,38 @@
   </audio>
 
   <script type="module">
-    import { startUIAnimation } from './js/uiAnimator.js';
+    import { startVisualizer, setAnalyserNode } from './js/visualizer.js';
 
-    const button = document.getElementById('enter-button');
     const mainImage = document.getElementById('main-image');
-    const fadeToBlack = document.getElementById('fade-to-black');
     const canvasWrapper = document.getElementById('canvas-wrapper');
-    const uiCanvas = document.getElementById('ui-canvas');
     const vizCanvas = document.getElementById('viz-canvas');
-    const vizCtx = vizCanvas.getContext('2d');
+    const fadeToBlack = document.getElementById('fade-to-black');
 
     let audioCtx;
     let analyser;
-    let dataArray;
-    let animationId;
 
-    // Replace button click with image click
-    mainImage.style.cursor = 'pointer';
+    // Resize canvas to fill container
+    function resizeCanvas() {
+      vizCanvas.width = canvasWrapper.clientWidth;
+      vizCanvas.height = canvasWrapper.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
     mainImage.addEventListener('click', async () => {
       mainImage.style.pointerEvents = 'none';
 
+      // Step 1: Fade image TO BLACK using CSS filter brightness(0)
+      mainImage.style.filter = 'brightness(0)';
+      
+      // Step 2: Wait 0.5 seconds
+      await new Promise(r => setTimeout(r, 500));
+
+      // Step 3: Show visualizer canvas
+      canvasWrapper.style.opacity = '1';
+
       try {
+        // Setup audio context and buffer
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') await audioCtx.resume();
 
@@ -108,53 +142,40 @@
         source.buffer = audioBuffer;
 
         analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        const bufferLength = analyser.frequencyBinCount;
-        dataArray = new Uint8Array(bufferLength);
-
+        analyser.fftSize = 512;
         source.connect(analyser);
         analyser.connect(audioCtx.destination);
+        setAnalyserNode(analyser);
+
+        // Step 4: Start playback and visualizer
         source.start();
+        startVisualizer();
 
-        mainImage.style.opacity = '0';
-        await new Promise(r => setTimeout(r, 1000));
-        canvasWrapper.style.opacity = '1';
-        startUIAnimation();
-
-        function drawViz() {
-          animationId = requestAnimationFrame(drawViz);
-          vizCtx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
-
-          const barWidth = (vizCanvas.width / bufferLength) * 2.5;
-          let x = 0;
-          analyser.getByteFrequencyData(dataArray);
-
-          for (let i = 0; i < bufferLength; i++) {
-            const barHeight = dataArray[i] / 2;
-            const alpha = dataArray[i] / 255;
-            vizCtx.fillStyle = `rgba(0, 120, 255, ${alpha})`;
-            vizCtx.fillRect(x, vizCanvas.height - barHeight, barWidth, barHeight);
-            x += barWidth + 1;
-          }
-        }
-
-        drawViz();
-
+        // When audio ends:
         source.onended = async () => {
-          cancelAnimationFrame(animationId);
-          canvasWrapper.style.opacity = '0';
+          // Wait additional 0.5 seconds (visualizer still showing)
+          await new Promise(r => setTimeout(r, 500));
+
+          // Step 5: Fade entire screen to black
           fadeToBlack.style.pointerEvents = 'auto';
           fadeToBlack.style.opacity = '1';
-          await new Promise(r => setTimeout(r, 1500));
-          window.location.href = 'main.html';
-        };
 
+          // Also fade out visualizer canvas
+          canvasWrapper.style.opacity = '0';
+
+          // Small delay for fade out before redirect
+          setTimeout(() => {
+            window.location.href = 'main.html';
+          }, 1000);
+        };
       } catch (e) {
         console.error('[Audio] Playback failed:', e);
         alert('Failed to play audio.');
         mainImage.style.pointerEvents = 'auto';
-        mainImage.style.opacity = '1';
+        mainImage.style.filter = 'brightness(1)';
         canvasWrapper.style.opacity = '0';
+        fadeToBlack.style.opacity = '0';
+        fadeToBlack.style.pointerEvents = 'none';
       }
     });
   </script>
