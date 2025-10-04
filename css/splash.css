@@ -40,42 +40,54 @@ h1 {
   overflow: visible; /* allow overflow for pulse */
 }
 
-/* BEHIND-IMAGE BLUE PULSE GLOW */
+/* Halo-style intense blue pulse overlay */
 .blue-pulse {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 250px;
-  height: 100px;
-  background: radial-gradient(circle, rgba(0,255,255,0.4) 20%, rgba(0,200,255,0.15) 80%);
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(
+    circle,
+    rgba(0, 47, 220, 0.0) 0%,
+    rgba(0, 47, 220, 0.15) 40%,
+    rgba(0, 47, 220, 0.4) 60%,
+    rgba(0, 47, 220, 0.6) 80%,
+    rgba(0, 47, 220, 0.85) 100%
+  );
   box-shadow:
-    0 0 50px 20px rgba(0, 255, 255, 0.7),
-    0 0 100px 40px rgba(0, 200, 255, 0.5),
-    0 0 140px 70px rgba(0, 200, 255, 0.3);
-  filter: blur(15px);
+    0 0 60px 30px rgba(0, 47, 220, 0.4),
+    0 0 120px 60px rgba(0, 47, 220, 0.3),
+    0 0 200px 80px rgba(0, 47, 220, 0.2);
+  filter: blur(8px);
   border-radius: 50%;
   pointer-events: none;
   opacity: 0;
-  z-index: 0; /* Behind image */
-  transition: opacity 0.3s ease;
+  z-index: 0;
+  transition: opacity 0.4s ease, z-index 0s 0.4s;
 }
 
+/* On hover: show intense blue halo */
 .image-wrapper:hover .blue-pulse {
   opacity: 1;
-  animation: pulse-behind 2.5s ease-in-out infinite;
+  z-index: 2;
+  transition: opacity 0.4s ease, z-index 0s;
+  animation: halo-pulse 2.2s ease-in-out infinite;
 }
 
-@keyframes pulse-behind {
+/* Halo pulse animation */
+@keyframes halo-pulse {
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);
-    opacity: 0.7;
+    opacity: 1;
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.35);
+    transform: translate(-50%, -50%) scale(1.4);
     opacity: 1;
   }
 }
+
 
 
 /* Image style */
