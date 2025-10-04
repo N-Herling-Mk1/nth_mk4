@@ -3,35 +3,25 @@
 let uiCanvas, uiCtx;
 let tick = 0;
 let noiseCanvas, noiseCtx;
-let noiseData;
-const noiseDensity = 0.0025; // between 0 (no noise) and 1 (full static)
+const noiseDensity = 0.03; // ⬆️ More frequent noise specks
 
 export function startUIAnimation() {
   console.log('startUIAnimation called');
 
   uiCanvas = document.getElementById('ui-canvas');
-  if (!uiCanvas) {
-    console.error('ui-canvas not found!');
-    return;
-  }
+  if (!uiCanvas) return console.error('ui-canvas not found!');
 
   uiCtx = uiCanvas.getContext('2d');
-  if (!uiCtx) {
-    console.error('Failed to get 2D context from ui-canvas!');
-    return;
-  }
+  if (!uiCtx) return console.error('Failed to get 2D context from ui-canvas!');
 
-  // Noise buffer canvas for better performance
   noiseCanvas = document.createElement('canvas');
   noiseCtx = noiseCanvas.getContext('2d');
 
   function resizeCanvas() {
     uiCanvas.width = uiCanvas.clientWidth;
     uiCanvas.height = uiCanvas.clientHeight;
-
     noiseCanvas.width = uiCanvas.width;
     noiseCanvas.height = uiCanvas.height;
-
     generateStatic();
   }
 
@@ -43,15 +33,21 @@ export function startUIAnimation() {
     const data = imageData.data;
 
     for (let i = 0; i < data.length; i += 4) {
-      const gray = Math.random() < noiseDensity ? Math.floor(Math.random() * 255) : 0;
-      data[i] = gray;     // R
-      data[i + 1] = gray; // G
-      data[i + 2] = gray; // B
-      data[i + 3] = Math.random() * 20 + 10; // Alpha for subtle transparency
+      if (Math.random() < noiseDensity) {
+        const blueBias = Math.random() * 255;
+        data[i]     = blueBias * 0.15;              // Red
+        data[i + 1] = blueBias * 0.3;               // Green
+        data[i + 2] = blueBias;                     // Blue
+        data[i + 3] = Math.random() * 100 + 50;      // ⬆️ More visible
+      } else {
+        data[i]     = 0;
+        data[i + 1] = 0;
+        data[i + 2] = 0;
+        data[i + 3] = Math.random() * 85;           // Ambient dark static
+      }
     }
 
     noiseCtx.putImageData(imageData, 0, 0);
-    noiseData = imageData;
   }
 
   function draw() {
@@ -61,48 +57,47 @@ export function startUIAnimation() {
     const w = uiCanvas.width;
     const h = uiCanvas.height;
 
-    // Hazy dark background
-    uiCtx.fillStyle = 'rgba(24, 24, 24, 0.15)';
+    // ⬇️ Slow fading for trail effect
+    uiCtx.fillStyle = 'rgba(0, 0, 0, 0.035)';
     uiCtx.fillRect(0, 0, w, h);
 
-    // Draw noise layer
-    uiCtx.drawImage(noiseCanvas, 0, 0);
-
-    // Re-generate noise every few frames for dynamic shimmer
-    if (Math.floor(tick * 10) % 3 === 0) {
+    // ⬆️ More static refresh frequency
+    if (Math.floor(tick * 10) % 2 === 0) {
       generateStatic();
     }
 
-    uiCtx.save();
-    uiCtx.translate(w / 2, h / 2); // Move origin to center
+    uiCtx.drawImage(noiseCanvas, 0, 0);
 
-    const ellipseCount = 3;
-    const baseRadiusX = w * 0.6;
-    const baseRadiusY = h * 0.4;
+    // Draw ellipses
+    uiCtx.save();
+    uiCtx.translate(w / 2, h / 2);
+
+    const ellipseCount = 4;
+    const baseRadiusX = w * 0.45;
+    const baseRadiusY = h * 0.3;
 
     for (let i = 0; i < ellipseCount; i++) {
-      const rotationSpeeds = [0.02, 0.01, 0.05];
-      const rotation = tick * rotationSpeeds[i] * (i % 2 === 0 ? 1 : -1);
+      const speed = [0.02, 0.015, 0.01, 0.03][i];
+      const rotation = tick * speed * (i % 2 === 0 ? 1 : -1);
 
       uiCtx.save();
       uiCtx.rotate(rotation);
 
-      // Glow / haze effect
-      uiCtx.shadowColor = `rgba(68, 217, 230, 0.6)`;
-      uiCtx.shadowBlur = 20;
+      uiCtx.shadowColor = 'rgba(68, 217, 230, 0.4)';
+      uiCtx.shadowBlur = 15;
 
-      uiCtx.strokeStyle = `rgba(68, 217, 230, 0.9)`;
-      uiCtx.lineWidth = 3;
+      uiCtx.strokeStyle = 'rgba(68, 217, 230, 0.85)';
+      uiCtx.lineWidth = 2;
 
       uiCtx.beginPath();
       uiCtx.ellipse(
         0,
         0,
-        baseRadiusX - i * 20,
-        baseRadiusY - i * 10,
+        baseRadiusX - i * 25,
+        baseRadiusY - i * 15,
         0,
         0,
-        2 * Math.PI
+        Math.PI * 2
       );
       uiCtx.stroke();
 
