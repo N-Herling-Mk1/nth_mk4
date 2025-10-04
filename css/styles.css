@@ -137,3 +137,15 @@ html, body {
   overflow-y: auto;
 }
 
+@media (max-width: 576px) {
+  .top-middle {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .top-middle .canvas-wrapper {
+    display: inline-block; /* so it doesn't wrap */
+    width: 100vw; /* full viewport width */
+    height: 300px; /* keep consistent height */
+  }
+}
