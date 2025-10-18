@@ -6,12 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Audio Visualizer UI</title>
 
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="css/splash.css" />
-  <link rel="stylesheet" href="css/carouselToggle.css" />
+  <!-- Bootstrap (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
 
   <!-- Social Media Preview Tags -->
   <meta property="og:title" content="Audio Visualizer UI" />
@@ -19,59 +15,142 @@
   <meta property="og:image" content="assets/images/NTH_6.png" />
   <meta property="og:url" content="_stub_" />
   <meta property="og:type" content="website" />
-
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Audio Visualizer UI" />
   <meta name="twitter:description" content="Interactive audio visualizer and project showcase." />
   <meta name="twitter:image" content="assets/images/NTH_6.png" />
 
+  <!-- All custom CSS consolidated (no 'pulse') -->
   <style>
+    /* Base layout */
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      color: #fff;
+      user-select: none;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Background traces canvas sits behind all content */
+    #grid-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;            /* behind content but above root bg */
+      pointer-events: none;  /* don’t block clicks */
+      display: block;
+    }
+
+    /* Splash container above background canvas */
+    .splash-container {
+      position: relative;    /* stacking context above bg canvas */
+      z-index: 1;
+      min-height: 100vh;
+      gap: 1rem;
+    }
+
+    /* Heading */
+    h2 {
+      font-weight: 700;
+      margin-bottom: 1rem;
+      font-size: 2rem;
+    }
+    @media (max-width: 576px) {
+      h2 { font-size: 1.6rem; }
+    }
+
+    /* Image wrapper + image */
+    .image-wrapper {
+      position: relative;
+      max-width: 400px;
+      width: 100%;
+      margin-bottom: 0.5rem;
+      overflow: visible;
+    }
+    .image-wrapper img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 16px;
+      box-shadow: 0 0 15px 5px rgba(0, 120, 255, 0.5);
+      transition: filter 0.5s ease, opacity 1s ease;
+      cursor: pointer;
+    }
+
+    /* Optional fallback button */
+    #enter-button {
+      padding: 1.2rem 3rem;
+      font-size: 1.25rem;
+      border-radius: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      box-shadow: 0 0 10px #0078ff;
+      transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+    }
+    #enter-button:disabled {
+      background-color: #004fbb !important;
+      cursor: default;
+      box-shadow: none;
+      opacity: 0.6;
+    }
+    #enter-button:hover:not(:disabled) {
+      background-color: #005fcc !important;
+      transform: scale(1.05);
+      box-shadow: 0 0 25px 5px #0078ff;
+    }
+
+    /* Fullscreen black fade overlay */
     #fade-to-black {
       position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background-color: black;
-      pointer-events: none;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
       opacity: 0;
+      pointer-events: none;
       transition: opacity 1s ease;
       z-index: 1000;
     }
 
-    #main-image {
-      cursor: pointer;
-      position: relative;
-      z-index: 10;
-      transition: filter 0.5s ease;
-    }
-
+    /* Visualizer canvas wrapper (over image during playback) */
     #canvas-wrapper {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.5s ease;
       z-index: 15;
     }
-
     #viz-canvas {
       position: absolute;
-      top: 0; left: 0;
+      inset: 0;
       width: 100%;
       height: 100%;
+    }
+
+    /* Ensure hero image is visible initially */
+    #main-image {
+      position: relative;
+      z-index: 10;
+      filter: none; /* no brightness change until click */
     }
   </style>
 </head>
 <body>
+  <!-- Background traces canvas -->
+  <canvas id="grid-canvas" aria-hidden="true"></canvas>
+
+  <!-- Splash content -->
   <div class="container splash-container d-flex flex-column align-items-center justify-content-center min-vh-100 text-center px-3">
-    <h2 class="mb-4 fw-bold">Welcome to Nathan Herling's personal website.</h2>
-    <span>[Phone users - Press image to enter - and turn device sideways]<br>
-    [Press image to enter]</span>
+    <h2 class="mb-2 fw-bold">Welcome to Nathan Herling's personal website.</h2>
+    <span class="mb-3">[Phone users - Press image to enter - and turn device sideways]<br>[Press image to enter]</span>
 
-    <div class="image-wrapper mb-4 w-100" style="max-width: 400px; position: relative;">
-      <!-- Pulse Overlay -->
-      <div id="pulse-overlay" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events: none; z-index: 5;"></div>
-
+    <div class="image-wrapper mb-4 w-100" style="max-width: 400px;">
       <!-- Clickable Image -->
       <img
         src="assets/images/NTH_7.png"
@@ -80,7 +159,7 @@
         class="img-fluid rounded shadow"
       />
 
-      <!-- Canvas Wrapper -->
+      <!-- Visualizer Canvas Wrapper -->
       <div id="canvas-wrapper">
         <canvas id="viz-canvas"></canvas>
       </div>
@@ -99,21 +178,21 @@
     <source src="assets/audio/01_Welcome.mp3" type="audio/mp3" />
   </audio>
 
+  <!-- Splash → audio/visualizer → fade → main.html -->
   <script type="module">
     import { startVisualizer, setAnalyserNode } from './js/visualizer.js';
 
-    const mainImage = document.getElementById('main-image');
-    const canvasWrapper = document.getElementById('canvas-wrapper');
-    const vizCanvas = document.getElementById('viz-canvas');
-    const fadeToBlack = document.getElementById('fade-to-black');
+    const mainImage    = document.getElementById('main-image');
+    const canvasWrap   = document.getElementById('canvas-wrapper');
+    const vizCanvas    = document.getElementById('viz-canvas');
+    const fadeOverlay  = document.getElementById('fade-to-black');
 
     let audioCtx;
     let analyser;
 
-    // Resize canvas to fill container
     function resizeCanvas() {
-      vizCanvas.width = canvasWrapper.clientWidth;
-      vizCanvas.height = canvasWrapper.clientHeight;
+      vizCanvas.width  = canvasWrap.clientWidth;
+      vizCanvas.height = canvasWrap.clientHeight;
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -121,50 +200,43 @@
     mainImage.addEventListener('click', async () => {
       mainImage.style.pointerEvents = 'none';
 
-      // Step 1: Fade image TO BLACK using CSS filter brightness(0)
+      // Fade image to black
       mainImage.style.filter = 'brightness(0)';
-      
-      // Step 2: Wait 0.5 seconds
+
+      // Short pause
       await new Promise(r => setTimeout(r, 500));
 
-      // Step 3: Show visualizer canvas
-      canvasWrapper.style.opacity = '1';
+      // Reveal visualizer
+      canvasWrap.style.opacity = '1';
 
       try {
-        // Setup audio context and buffer
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-        const response = await fetch('assets/audio/01_Welcome.mp3');
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        const response     = await fetch('assets/audio/01_Welcome.mp3');
+        const arrayBuffer  = await response.arrayBuffer();
+        const audioBuffer  = await audioCtx.decodeAudioData(arrayBuffer);
 
         const source = audioCtx.createBufferSource();
         source.buffer = audioBuffer;
 
         analyser = audioCtx.createAnalyser();
         analyser.fftSize = 512;
+
         source.connect(analyser);
         analyser.connect(audioCtx.destination);
         setAnalyserNode(analyser);
 
-        // Step 4: Start playback and visualizer
+        // Start
         source.start();
         startVisualizer();
 
-        // When audio ends:
         source.onended = async () => {
-          // Wait additional 0.5 seconds (visualizer still showing)
           await new Promise(r => setTimeout(r, 500));
+          fadeOverlay.style.pointerEvents = 'auto';
+          fadeOverlay.style.opacity = '1';
+          canvasWrap.style.opacity = '0';
 
-          // Step 5: Fade entire screen to black
-          fadeToBlack.style.pointerEvents = 'auto';
-          fadeToBlack.style.opacity = '1';
-
-          // Also fade out visualizer canvas
-          canvasWrapper.style.opacity = '0';
-
-          // Small delay for fade out before redirect
           setTimeout(() => {
             window.location.href = 'main.html';
           }, 1000);
@@ -174,10 +246,185 @@
         alert('Failed to play audio.');
         mainImage.style.pointerEvents = 'auto';
         mainImage.style.filter = 'brightness(1)';
-        canvasWrapper.style.opacity = '0';
-        fadeToBlack.style.opacity = '0';
-        fadeToBlack.style.pointerEvents = 'none';
+        canvasWrap.style.opacity = '0';
+        fadeOverlay.style.opacity = '0';
+        fadeOverlay.style.pointerEvents = 'none';
       }
+    });
+  </script>
+
+  <!-- Background traces animation (white / blue / purple, weighted palette) -->
+  <script type="module">
+    const canvas = document.getElementById("grid-canvas");
+    const ctx = canvas.getContext("2d");
+
+    /* ================= DPR-safe sizing ================= */
+    let logicalW = 0, logicalH = 0;  // CSS pixel size
+
+    function fitCanvas() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      logicalW = window.innerWidth;
+      logicalH = window.innerHeight;
+
+      // Buffer size in device pixels
+      canvas.width  = Math.floor(logicalW * dpr);
+      canvas.height = Math.floor(logicalH * dpr);
+
+      // Draw in CSS pixels
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      buildGrid();
+    }
+
+    /* ================= Tunables ================= */
+    let GRID_SPACING   = 100;
+    let LINE_WIDTH     = 0.8;
+
+    // 🎨 Whites–Blues–Purples palette (weighted to favor logo-feel)
+const COLORS = [
+  { rgb: [255,255,255], weight: 0.10 },  // occasional white flash
+  { rgb: [210,230,255], weight: 0.15 },  // icy blue-white
+  { rgb: [120,190,255], weight: 0.22 },  // bright sky blue
+  { rgb: [ 60,150,255], weight: 0.22 },  // core electric blue
+  { rgb: [ 20, 90,255], weight: 0.18 },  // deep cobalt
+  { rgb: [100, 90,255], weight: 0.08 },  // faint violet hint
+  { rgb: [150,110,255], weight: 0.05 },  // light lavender accent
+];
+
+    function pickWeighted(list){
+      const total = list.reduce((s,c)=>s+c.weight,0);
+      let r = Math.random()*total;
+      for (const c of list){ r -= c.weight; if (r <= 0) return c.rgb; }
+      return list[list.length-1].rgb;
+    }
+    function jitter(rgb, amt=8){
+      return rgb.map(v => Math.max(0, Math.min(255, v + (Math.random()*2-1)*amt)));
+    }
+
+    let STREAK_RATE    = 1.4;             // spawns per second
+    let SPEED_MIN_MAX  = [180, 350];
+    let LENGTH_MIN_MAX = [180, 400];
+    let CORE_ALPHA     = [0.6, 1.0];
+
+    // Glow + trail controls (slightly wider/softer for logo feel)
+    let BLOOM_WIDTH = 6.5;
+    let BLOOM_ALPHA = 0.25;
+    let SHADOW_BLUR = 18;
+    let TRAIL_FADE  = 0.05;
+
+    /* ================ Grid and Tracers ================ */
+    let vLines = [], hLines = [];
+    function buildGrid() {
+      vLines = []; hLines = [];
+      for (let x = 0; x <= logicalW; x += GRID_SPACING) vLines.push(x);
+      for (let y = 0; y <= logicalH; y += GRID_SPACING) hLines.push(y);
+    }
+    fitCanvas();
+    window.addEventListener("resize", fitCanvas);
+
+    /* ================ Tracers ================ */
+    const tracers = [];
+    const rand = (a,b)=> a + Math.random()*(b-a);
+    const pick = arr => arr[(Math.random()*arr.length)|0];
+
+    function spawnTracer(){
+      const isV = Math.random() < 0.5;
+      const color = jitter(pickWeighted(COLORS), 8); // pick weighted, lightly jittered
+
+      if (isV && vLines.length){
+        const x = pick(vLines);
+        const down = Math.random() < 0.5;
+        const speed = (down?1:-1)*rand(...SPEED_MIN_MAX);
+        const len = rand(...LENGTH_MIN_MAX);
+        const head = down ? -len : logicalH + len;
+        tracers.push({dir:'v', line:x, head, len, speed, alpha:rand(...CORE_ALPHA), color});
+      } else if (!isV && hLines.length){
+        const y = pick(hLines);
+        const right = Math.random() < 0.5;
+        const speed = (right?1:-1)*rand(...SPEED_MIN_MAX);
+        const len = rand(...LENGTH_MIN_MAX);
+        const head = right ? -len : logicalW + len;
+        tracers.push({dir:'h', line:y, head, len, speed, alpha:rand(...CORE_ALPHA), color});
+      }
+    }
+
+    /* ================ Drawing ================ */
+    function tracerGradient(x1,y1,x2,y2,a,color){
+      const [r,g,b] = color;
+      const gnt = ctx.createLinearGradient(x1,y1,x2,y2);
+      gnt.addColorStop(0,  `rgba(${r},${g},${b},0)`);
+      gnt.addColorStop(0.4,`rgba(${r},${g},${b},${a*0.7})`);
+      gnt.addColorStop(1,  `rgba(${r},${g},${b},${a})`);
+      return gnt;
+    }
+
+    function drawTracer(t){
+      const [r,g,b] = t.color;
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.globalCompositeOperation = "lighter";
+
+      // Wide faint halo
+      ctx.lineWidth   = LINE_WIDTH + BLOOM_WIDTH;
+      ctx.strokeStyle = `rgba(${r},${g},${b},${BLOOM_ALPHA})`;
+      ctx.shadowColor = `rgba(${r},${g},${b},${BLOOM_ALPHA})`;
+      ctx.shadowBlur  = SHADOW_BLUR;
+
+      if (t.dir === 'v'){
+        const y1 = t.head - t.len, y2 = t.head;
+        ctx.beginPath(); ctx.moveTo(t.line,y1); ctx.lineTo(t.line,y2); ctx.stroke();
+
+        ctx.lineWidth   = LINE_WIDTH + 0.4;
+        ctx.shadowBlur  = SHADOW_BLUR*0.5;
+        ctx.strokeStyle = tracerGradient(t.line,y1,t.line,y2,t.alpha,t.color);
+        ctx.beginPath(); ctx.moveTo(t.line,y1); ctx.lineTo(t.line,y2); ctx.stroke();
+      } else {
+        const x1 = t.head - t.len, x2 = t.head;
+        ctx.beginPath(); ctx.moveTo(x1,t.line); ctx.lineTo(x2,t.line); ctx.stroke();
+
+        ctx.lineWidth   = LINE_WIDTH + 0.4;
+        ctx.shadowBlur  = SHADOW_BLUR*0.5;
+        ctx.strokeStyle = tracerGradient(x1,t.line,x2,t.line,t.alpha,t.color);
+        ctx.beginPath(); ctx.moveTo(x1,t.line); ctx.lineTo(x2,t.line); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /* ================ Loop ================ */
+    let last = performance.now();
+    function tick(now){
+      const dt = Math.min(0.05,(now-last)/1000); last=now;
+
+      if (Math.random() < STREAK_RATE*dt) spawnTracer();
+
+      for (let i=tracers.length-1; i>=0; i--){
+        const t = tracers[i];
+        t.head += t.speed*dt;
+        if (t.dir==='v'){
+          if (t.speed>0 && t.head - t.len > logicalH + 5) tracers.splice(i,1);
+          else if (t.speed<0 && t.head < -5)              tracers.splice(i,1);
+        } else {
+          if (t.speed>0 && t.head - t.len > logicalW + 5) tracers.splice(i,1);
+          else if (t.speed<0 && t.head < -5)              tracers.splice(i,1);
+        }
+      }
+
+      // Fade the frame for trails (stays black overall)
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = `rgba(0,0,0,${TRAIL_FADE})`;
+      ctx.fillRect(0,0,logicalW,logicalH);
+
+      for (const t of tracers) drawTracer(t);
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    // Live tweaks
+    window.addEventListener("keydown",e=>{
+      if(e.key==='['){GRID_SPACING=Math.max(40,GRID_SPACING-10);buildGrid();}
+      if(e.key===']'){GRID_SPACING=Math.min(200,GRID_SPACING+10);buildGrid();}
+      if(e.key==='-') STREAK_RATE=Math.max(0.2,STREAK_RATE-0.2);
+      if(e.key==='=') STREAK_RATE=Math.min(6,STREAK_RATE+0.2);
     });
   </script>
 </body>
