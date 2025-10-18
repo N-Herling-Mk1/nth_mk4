@@ -280,15 +280,14 @@
     let LINE_WIDTH     = 0.8;
 
     // 🎨 Whites–Blues–Purples palette (weighted to favor logo-feel)
-const COLORS = [
-  { rgb: [255,255,255], weight: 0.10 },  // occasional white flash
-  { rgb: [210,230,255], weight: 0.15 },  // icy blue-white
-  { rgb: [120,190,255], weight: 0.22 },  // bright sky blue
-  { rgb: [ 60,150,255], weight: 0.22 },  // core electric blue
-  { rgb: [ 20, 90,255], weight: 0.18 },  // deep cobalt
-  { rgb: [100, 90,255], weight: 0.08 },  // faint violet hint
-  { rgb: [150,110,255], weight: 0.05 },  // light lavender accent
-];
+    const COLORS = [
+      { rgb: [240,250,255], weight: 0.06 },   // faint white flash
+      { rgb: [180,220,255], weight: 0.14 },   // pale icy blue
+      { rgb: [100,180,255], weight: 0.24 },   // bright electric blue
+      { rgb: [ 40,130,255], weight: 0.26 },   // core cobalt glow
+      { rgb: [ 10, 80,255], weight: 0.20 },   // deep digital blue
+      { rgb: [  0, 50,180], weight: 0.10 },   // very dark base blue
+    ];
 
     function pickWeighted(list){
       const total = list.reduce((s,c)=>s+c.weight,0);
@@ -306,9 +305,9 @@ const COLORS = [
     let CORE_ALPHA     = [0.6, 1.0];
 
     // Glow + trail controls (slightly wider/softer for logo feel)
-    let BLOOM_WIDTH = 6.5;
-    let BLOOM_ALPHA = 0.25;
-    let SHADOW_BLUR = 18;
+    let BLOOM_WIDTH = 5.5;   // slightly tighter beam
+    let BLOOM_ALPHA = 0.28;  // stronger halo brightness
+    let SHADOW_BLUR = 20;    // more intense glow diffusion
     let TRAIL_FADE  = 0.05;
 
     /* ================ Grid and Tracers ================ */
